@@ -32,75 +32,73 @@
 - [ ] _Customize theme tokens to medical palette (teal/blue) — defer to Phase 8.0 shared shell_
 
 ### 0.4 LangGraph Studio ✅
-- [x] `langgraph-cli` installed via requirements.txt (langgraph 1.2 includes it)
+- [x] `langgraph-cli[inmem]` installed (separately from `langgraph` package)
 - [x] `backend/langgraph.json` created pointing at `./app/graph.py:graph`
-- [ ] `langgraph dev` test — wait until graph.py exists (Phase 1.3)
+- [x] `langgraph dev` lance Studio + graphe chargé sans erreur
 
 ---
 
-## Phase 1 — Minimal graph (Supervisor → Diagnostic → Report → END)
+## Phase 1 — Minimal graph (Supervisor → Diagnostic → Report → END) ✅
 
-### 1.1 State definition
-- [ ] Create `backend/app/state.py` with `MedicalState` TypedDict (spec §8 fields + `thread_id`, `patient_initial_case`)
-- [ ] Create `backend/app/__init__.py`
+### 1.1 State definition ✅
+- [x] `backend/app/state.py` créé avec `MedicalState` TypedDict (11 champs : spec §8 + `thread_id`, `patient_initial_case`, `patient_responses`, `patient_answer`)
+- [x] `backend/app/__init__.py` créé
 
-### 1.2 Nodes (no tools yet, just LLM calls)
-- [ ] `backend/app/nodes/supervisor.py` — routes based on `state["next"]`
-- [ ] `backend/app/nodes/diagnostic_agent.py` — stub that returns a fake synthesis
-- [ ] `backend/app/nodes/report_agent.py` — stub that returns a fake final report (with mandatory French disclaimer!)
-- [ ] Add `__init__.py` to `nodes/`
+### 1.2 Nodes (stubs sans LLM) ✅
+- [x] `supervisor.py` — routage early-return + truthy check
+- [x] `diagnostic_agent.py` — stub avec vocabulaire éthique
+- [x] `report_agent.py` — stub avec disclaimer obligatoire verbatim
+- [x] `physician_review.py` — HITL avec `interrupt()` (anticipé de Phase 4)
+- [x] `__init__.py` ajouté à `nodes/`
 
-### 1.3 Wire the graph
-- [ ] `backend/app/graph.py` — `StateGraph(MedicalState)`, add nodes, add edges per spec §5 workflow, compile with `MemorySaver` checkpointer
-- [ ] Open in LangGraph Studio — visually confirm: START → Supervisor → Diagnostic → Supervisor → Report → Supervisor → END
-- [ ] Invoke once via Studio with a fake initial case → final state has all expected keys
+### 1.3 Wire the graph ✅
+- [x] `backend/app/graph.py` — `StateGraph(MedicalState)`, 4 nœuds, 8 edges (4 conditionnels + 4 fixes), `compile()` sans checkpointer (Studio gère)
+- [x] Validé dans LangGraph Studio : graphe visible, transitions ok
+- [x] Invocation end-to-end testée : interrupt physician_review + resume + END ✅
 
-### 1.4 Commit
-- [ ] `git commit -m "feat(graph): minimal supervisor→diagnostic→report skeleton"`
-
----
-
-## Phase 2 — Patient interaction (5-question loop)
-
-### 2.1 `ask_patient` tool
-- [ ] Create `backend/app/tools/__init__.py`
-- [ ] Create `backend/app/tools/patient_tools.py` with `@tool` `ask_patient(question: str) -> str`
-- [ ] Decide UX: tool **emits** a question and the graph **interrupts** to wait for the patient's answer (LangGraph `interrupt()`), then resumes with the answer appended to `messages`
-
-### 2.2 Upgrade Diagnostic Agent to real LLM + tool loop
-- [ ] Use `ChatOpenAI(model="gpt-4o-mini").bind_tools([ask_patient, recommend_interim_care])`
-- [ ] System prompt: instruct to ask exactly 5 questions, then produce a `diagnostic_summary`. Approved vocabulary only (spec §2).
-- [ ] Track `question_count` in state; loop in graph until count == 5
-- [ ] Append every Q&A to `messages`
-
-### 2.3 Test in Studio
-- [ ] Run with case "patient with mild cough" → confirm 5 distinct questions are asked, each waits for resume
-- [ ] Confirm final `diagnostic_summary` mentions only "orientation clinique préliminaire" terms
+### 1.4 Commit ✅
+- [x] Commit `ce59928 — feat(graph): minimal LangGraph workflow with HITL — Phase 1 done`
 
 ---
 
-## Phase 3 — Interim care recommendation
+## Phase 2 — Patient interaction (5-question loop) ✅
 
-### 3.1 `recommend_interim_care` tool
-- [ ] `backend/app/tools/care_tools.py` — `@tool` `recommend_interim_care(symptoms: str) -> str`
-- [ ] Returns cautious recommendations only (rest, hydration, monitoring, urgent consultation if worsening)
-- [ ] Diagnostic Agent calls this after Q&A; writes to `state["interim_care"]`
+### 2.1 `ask_patient` tool ✅
+- [x] `backend/app/tools/__init__.py` créé
+- [x] `backend/app/tools/patient_tools.py` — `@tool` `ask_patient(question)` qui appelle `interrupt({"question": ...})` et retourne la réponse string
 
-### 3.2 Test
-- [ ] Verify `interim_care` populated for benign case AND red-flag case
-- [ ] Red-flag case must mention urgent consultation
+### 2.2 Diagnostic Agent v2 (vrai LLM + boucle hybride) ✅
+- [x] **Choix design : Option C (hybride)** — 3 questions fixes + 2 questions LLM adaptatives
+- [x] `ChatOpenAI(model="gpt-4o-mini")` intégré via `langchain-openai`
+- [x] `QUESTIONS_FIXES` (Q1-Q3 cliniques essentielles : symptômes, fièvre, antécédents)
+- [x] `generer_question_dynamique()` — LLM génère Q4 et Q5 en fonction des réponses précédentes
+- [x] `generer_synthese()` — LLM produit `diagnostic_summary` + `interim_care` en JSON mode (`response_format=json_object`)
+- [x] `question_count` tracké, boucle gérée via routage Supervisor
+- [x] Vocabulaire éthique enforced dans le prompt (interdit : "diagnostic" / utiliser : "orientation clinique préliminaire")
+
+### 2.3 Test in Studio ✅
+- [x] Run avec cas "fièvre + mal de gorge" — 5 questions enchaînées (3 fixes + 2 LLM)
+- [x] Synthèse générée respecte le vocabulaire éthique ("pourrait orienter vers", pas "diagnostiquer")
+- [x] Interim care couvre repos/hydratation/surveillance/consultation si aggravation
+- [x] HITL physician_review affiche bien la synthèse au médecin
 
 ---
 
-## Phase 4 — Physician Review (Human-in-the-Loop)
+## Phase 3 — Interim care recommendation ✅ (intégré dans Phase 2)
 
-### 4.1 PhysicianReview node
-- [ ] `backend/app/nodes/physician_review.py` — uses `interrupt({...})` to pause, exposing `diagnostic_summary` + `interim_care` to the caller, awaits physician `physician_treatment` field
-- [ ] Supervisor routes to PhysicianReview after Diagnostic completes
+> **Design choice**: au lieu d'un tool séparé `recommend_interim_care`, l'interim_care est généré par le même appel LLM que la synthèse (clé `interim_care` dans le JSON output de `generer_synthese`). Plus efficient (1 appel LLM au lieu de 2) et le contexte clinique est partagé.
 
-### 4.2 Test interrupt + resume
-- [ ] In Studio: run until PhysicianReview, confirm graph pauses
-- [ ] Resume with a `physician_treatment` payload, confirm graph continues to ReportAgent
+- [x] `interim_care` rempli pour le cas testé en Phase 2.3
+- [ ] À valider en Phase 5 : red-flag case mentionne urgent consultation
+- [ ] À valider en Phase 5 : benign case reste prudent
+
+---
+
+## Phase 4 — Physician Review (Human-in-the-Loop) ✅ (fait en Phase 1.2)
+
+- [x] `backend/app/nodes/physician_review.py` créé en Phase 1.2 (anticipation)
+- [x] Convention `interrupt()` clarifiée : payload exposé + retour string brute (pas dict)
+- [x] Resume testé avec succès en Phase 1.3 ET re-testé en Phase 2.3 avec vraie synthèse LLM
 
 ---
 
@@ -239,3 +237,4 @@
 _Append notes here as you go — date them so context doesn't decay._
 
 - `2026-05-21` — Project initialized. Chose React+Vite+Tailwind+shadcn for frontend. Will use OpenAI (`gpt-4o-mini` default) via `langchain-openai`.
+- `2026-05-22` — Phases 0, 1, 2, 3, 4 done. Le graphe complet tourne dans Studio avec vraie boucle LLM 5 questions (3 fixes + 2 adaptatives), synthèse OpenAI, HITL médecin, rapport final avec disclaimer. Commit Phase 1: `ce59928`. **Prochaine session : Phase 5 (Report Agent avec Pydantic structured output) puis Phase 6 (FastAPI).**
