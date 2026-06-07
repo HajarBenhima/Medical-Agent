@@ -1,6 +1,6 @@
 # Diagnostic Médical — Système multi-agents avec LangGraph
 
-> ⚠️ **Avertissement**: Ce système est un **exercice académique** (EMSI S8, IA Distribuée, Pr. M. Youssfi).
+> **Avertissement**: Ce système est un **exercice académique** (EMSI S8, IA Distribuée, Pr. M. Youssfi).
 > Il n'est **pas** un dispositif médical et ne fournit **pas** de diagnostic définitif.
 > **Ce système ne remplace pas une consultation médicale.**
 
@@ -27,7 +27,7 @@ Diagnostic_Medical/
 
 ## Installation
 
-> 🚧 _Sections à compléter au fur et à mesure du développement._
+> _Sections à compléter au fur et à mesure du développement._
 
 ### Backend
 
@@ -68,9 +68,3 @@ cd frontend && npm run dev
 # Terminal 4 — LangGraph Studio (optionnel)
 cd backend && langgraph dev
 ```
-
-## Documentation
-
-- [CLAUDE.md](CLAUDE.md) — Brief technique complet (architecture, contraintes, conventions UI)
-- [TASKS.md](TASKS.md) — Tracker des phases du projet
-- [assets/Cahier_des_charges_Projet_MultiAgents_Medical.pdf](assets/Cahier_des_charges_Projet_MultiAgents_Medical.pdf) — Spec officielle
