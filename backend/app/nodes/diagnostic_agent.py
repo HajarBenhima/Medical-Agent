@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 
 from app.state import MedicalState
 from app.tools.patient_tools import ask_patient
+from app.tools.mcp_client import call_red_flag_lookup
 
 load_dotenv()
 
@@ -41,6 +42,25 @@ def generer_question_dynamique(patient_initial_case, patient_responses):
 
 
 def generer_synthese(state):
+    # Étape 1 : consulter le serveur MCP pour détecter d'éventuels red flags
+    # cliniques dans l'ensemble des symptômes recueillis.
+    all_symptoms_text = (
+        state.get("patient_initial_case", "")
+        + "\n"
+        + format_responses(state.get("patient_responses", []))
+    )
+    red_flags = call_red_flag_lookup(all_symptoms_text)
+
+    red_flag_section = ""
+    if red_flags:
+        red_flag_section = (
+            "\n\nSIGNES D'ALERTE DÉTECTÉS (via le serveur MCP red-flags) — "
+            "tu DOIS les mentionner explicitement dans la synthèse ET dans "
+            "la recommandation intermédiaire :\n"
+            + "\n".join(f"- {rf}" for rf in red_flags)
+        )
+
+    # Étape 2 : générer la synthèse + interim_care via le LLM
     prompt = f"""Tu es un médecin qui rédige une SYNTHÈSE CLINIQUE PRÉLIMINAIRE
             (jamais un diagnostic définitif) à partir des informations suivantes.
 
@@ -48,6 +68,7 @@ def generer_synthese(state):
 
             Réponses du patient :
             {format_responses(state.get('patient_responses', []))}
+            {red_flag_section}
 
             Produis ta réponse au format JSON STRICT avec EXACTEMENT 2 clés :
             {{
@@ -65,7 +86,7 @@ def generer_synthese(state):
         model_kwargs={"response_format": {"type": "json_object"}},
     )
     response = llm.invoke(prompt)
-    
+
     parsed = json.loads(str(response.content))
     return {
         "diagnostic_summary": parsed["diagnostic_summary"],

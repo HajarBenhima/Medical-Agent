@@ -1,0 +1,94 @@
+{
+  "_meta": {
+    "description": "Curated list of clinical red flags (signes d'alerte) for the medical orientation system.",
+    "source": "Academic project — based on common clinical-priority indicators. NOT for clinical use.",
+    "language": "fr"
+  },
+  "red_flags": [
+    {
+      "category": "cardiovasculaire",
+      "keywords": ["douleur thoracique", "douleur poitrine", "oppression thoracique", "chest pain"],
+      "warning": "Douleur thoracique — évoquer un syndrome coronarien aigu. Orientation urgente vers les urgences."
+    },
+    {
+      "category": "respiratoire",
+      "keywords": ["dyspnée sévère", "détresse respiratoire", "difficulté à respirer", "essoufflement extrême", "shortness of breath"],
+      "warning": "Détresse respiratoire — évaluation urgente nécessaire."
+    },
+    {
+      "category": "neurologique",
+      "keywords": ["confusion", "désorientation", "altération de la conscience", "altération conscience"],
+      "warning": "Confusion ou altération de la conscience — consultation urgente."
+    },
+    {
+      "category": "neurologique",
+      "keywords": ["céphalée brutale", "maux de tête brutaux", "pire mal de tête", "céphalée violente"],
+      "warning": "Céphalée brutale et violente — exclure une hémorragie méningée. Urgences."
+    },
+    {
+      "category": "neurologique",
+      "keywords": ["syncope", "perte de connaissance", "évanouissement"],
+      "warning": "Perte de connaissance — évaluation urgente."
+    },
+    {
+      "category": "neurologique",
+      "keywords": ["paralysie", "faiblesse soudaine", "hémiplégie", "paralysie unilatérale"],
+      "warning": "Déficit moteur soudain — évoquer un AVC. Appel urgent au 15."
+    },
+    {
+      "category": "neurologique",
+      "keywords": ["trouble de la parole", "aphasie", "difficulté à parler", "ne plus parler"],
+      "warning": "Trouble du langage d'apparition brutale — évoquer un AVC. Urgences."
+    },
+    {
+      "category": "neurologique",
+      "keywords": ["convulsion", "crise convulsive", "crise d'épilepsie"],
+      "warning": "Crise convulsive — évaluation urgente."
+    },
+    {
+      "category": "infectieux",
+      "keywords": ["raideur de la nuque", "raideur nuque", "nuque raide"],
+      "warning": "Raideur de nuque — exclure une méningite, notamment si fièvre associée. Urgences."
+    },
+    {
+      "category": "infectieux",
+      "keywords": ["fièvre très élevée", "fièvre 40", "40°c", "40°", "hyperthermie sévère"],
+      "warning": "Fièvre très élevée — surveillance étroite et consultation rapide."
+    },
+    {
+      "category": "hémorragique",
+      "keywords": ["hémoptysie", "cracher du sang", "sang dans les crachats"],
+      "warning": "Hémoptysie — consultation urgente."
+    },
+    {
+      "category": "hémorragique",
+      "keywords": ["saignement abondant", "hémorragie", "hématémèse", "vomir du sang"],
+      "warning": "Saignement abondant — consultation urgente."
+    },
+    {
+      "category": "abdominal",
+      "keywords": ["douleur abdominale aiguë", "ventre très douloureux", "douleur abdomen sévère"],
+      "warning": "Douleur abdominale aiguë et sévère — évaluation médicale urgente."
+    },
+    {
+      "category": "respiratoire",
+      "keywords": ["cyanose", "lèvres bleues", "extrémités bleues"],
+      "warning": "Cyanose — signe d'hypoxie. Urgences."
+    },
+    {
+      "category": "psychiatrique",
+      "keywords": ["idée suicidaire", "envie de mourir", "envie de me suicider", "idées noires"],
+      "warning": "Idéation suicidaire — orientation immédiate vers une prise en charge psychiatrique d'urgence."
+    },
+    {
+      "category": "métabolique",
+      "keywords": ["déshydratation", "déshydratation sévère", "vomissements répétés", "diarrhée importante"],
+      "warning": "Risque de déshydratation — surveillance et hydratation, consultation rapide si signes de gravité."
+    },
+    {
+      "category": "allergique",
+      "keywords": ["œdème de quincke", "œdème face", "gonflement gorge", "réaction allergique sévère"],
+      "warning": "Réaction allergique sévère (anaphylaxie possible) — urgences."
+    }
+  ]
+}
