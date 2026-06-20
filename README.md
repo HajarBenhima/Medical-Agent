@@ -60,78 +60,17 @@ L'ensemble est exposé via une API FastAPI consommée par un frontend React (qua
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│                            Frontend (React)                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │   Intake     │→ │ Q&A (chat)   │→ │  Physician   │→ │ Final Report │  │
-│  │  (Écran 1)   │  │  (Écran 2)   │  │  (Écran 3)   │  │  (Écran 4)   │  │
-│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │
-└────────────────────────────────┬─────────────────────────────────────────┘
-                                 │ HTTP (axios + TanStack Query)
-┌────────────────────────────────▼─────────────────────────────────────────┐
-│                              API (FastAPI)                               │
-│   POST /sessions/start   ·   POST /consultation/start   ·   /resume      │
-│   GET  /consultation/{id}   ·   GET /consultation/{id}/report            │
-└────────────────────────────────┬─────────────────────────────────────────┘
-                                 │ invokes / resumes
-┌────────────────────────────────▼─────────────────────────────────────────┐
-│                       LangGraph workflow (state + checkpointer)          │
-│                                                                          │
-│   START ─→ Supervisor ─→ DiagnosticAgent  (loop 5×)                      │
-│                                │                                         │
-│                                ├─→ ask_patient (interrupt)               │
-│                                ├─→ lookup_red_flags  ←──┐                │
-│                                └─→ generer_synthese     │                │
-│                                            ↓            │                │
-│             Supervisor ←─────────────────  +            │                │
-│                                            ↓            │                │
-│             PhysicianReview (interrupt — HITL)          │                │
-│                                            ↓            │                │
-│             Supervisor → ReportAgent (with_structured_output)            │
-│                                            ↓            │                │
-│             Supervisor → END                            │                │
-│                                                         │                │
-└─────────────────────────────────────────────────────────┼────────────────┘
-                                                         │ MCP stdio
-                                       ┌─────────────────▼────────────────┐
-                                       │     MCP Server (FastMCP)         │
-                                       │  lookup_red_flags(symptoms)      │
-                                       │  list_red_flag_categories()      │
-                                       └──────────────────────────────────┘
-```
+![Architecture du système](./docs/architecture.png)
+
+Le frontend React appelle l'API FastAPI en HTTP. L'API instancie le graphe LangGraph avec un checkpointer `MemorySaver` et l'invoque ou le reprend selon le payload reçu. Le graphe orchestre quatre nœuds (`Supervisor`, `DiagnosticAgent`, `PhysicianReview`, `ReportAgent`) qui se passent le `MedicalState` partagé. Le `DiagnosticAgent` consulte le serveur MCP local via stdio pour détecter les *red flags* avant de produire la synthèse.
 
 ---
 
 ## Workflow LangGraph
 
-```
-                                       ┌─────────────┐
-                                       │    START    │
-                                       └──────┬──────┘
-                                              │
-                                       ┌──────▼──────┐
-                  ┌────────────────────│  Supervisor │◀───────────┐
-                  │                    └──────┬──────┘            │
-                  │                           │                   │
-                  ▼                           ▼                   ▼
-        ┌──────────────────┐       ┌──────────────────┐    ┌────────────┐
-        │  DiagnosticAgent │       │  PhysicianReview │    │ ReportAgent│
-        │                  │       │   (HITL pause)   │    │ (Pydantic) │
-        │ ┌──────────────┐ │       └────────┬─────────┘    └─────┬──────┘
-        │ │ ask_patient  │ │                │                    │
-        │ │  ×5 loop     │ │                │                    │
-        │ │              │ │                │                    │
-        │ │ MCP red-flags│ │                │                    │
-        │ │ + synthèse   │ │                │                    │
-        │ └──────────────┘ │                │                    │
-        └────────┬─────────┘                │                    │
-                 └──────────────────────────┴────────────────────┘
-                                                                 │
-                                                          ┌──────▼──────┐
-                                                          │     END     │
-                                                          └─────────────┘
-```
+![Graphe LangGraph capturé depuis Studio](./docs/langgraph-workflow.png)
+
+Capture issue de LangGraph Studio. Le `supervisor` est le point central : il route conditionnellement vers `diagnostic_agent`, `physician_review` ou `report_agent` (flèches pleines), et chacun de ces nœuds revient ensuite vers le supervisor (flèches pointillées) jusqu'à ce que l'état atteigne `__end__`.
 
 Routage du Supervisor (déterministe, sans LLM) :
 
